@@ -15,9 +15,10 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import { attendanceData } from "../../data/dashboard";
+import type { AttendancePoint } from "../../types/dashboard";
+interface Props { data: AttendancePoint[]; }
 
-export default function AttendanceChart() {
+export default function AttendanceChart({ data }: Props) {
   return (
     <Card sx={{ height: "100%" }}>
       <CardContent>
@@ -53,7 +54,7 @@ export default function AttendanceChart() {
 
         <Box sx={{ width: "100%", height: 300 }}>
           <ResponsiveContainer>
-            <AreaChart data={attendanceData}>
+            <AreaChart data={data}>
               <defs>
                 <linearGradient
                   id="attendanceGradient"

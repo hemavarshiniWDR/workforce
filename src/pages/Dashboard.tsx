@@ -1,198 +1,22 @@
-import { useMemo, useState } from "react";
-
-import {
-  Box,
-  Container,
-  Typography,
-} from "@mui/material";
-
-import Sidebar from "../components/layout/Sidebar";
-import TopNavigation from "../components/layout/TopNavigation";
-
-import KPICard from "../components/dashboard/KPICard";
-import AttendanceChart from "../components/dashboard/AttendanceChart";
-import DepartmentChart from "../components/dashboard/DepartmentChart";
-import WorkforceDonut from "../components/dashboard/WorkforceDonut";
-import ActivityPanel from "../components/dashboard/ActivityPanel";
-import FilterBar from "../components/dashboard/FilterBar";
-
-import {
-  employees,
-  kpis,
-} from "../data/dashboard";
-
-export default function Dashboard() {
-  const [department, setDepartment] =
-    useState("All");
-
-  const [location, setLocation] =
-    useState("All");
-
-  const [status, setStatus] =
-    useState("All");
-
-  const filteredEmployees = useMemo(() => {
-    return employees.filter((employee) => {
-      const departmentMatch =
-        department === "All" ||
-        employee.department === department;
-
-      const locationMatch =
-        location === "All" ||
-        employee.location === location;
-
-      const statusMatch =
-        status === "All" ||
-        employee.status === status;
-
-      return (
-        departmentMatch &&
-        locationMatch &&
-        statusMatch
-      );
-    });
-  }, [department, location, status]);
-
-  return (
-    <Box
-      sx={{
-        display: "flex",
-        minHeight: "100vh",
-        background: "#07130F",
-      }}
-    >
-      <Sidebar />
-
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <TopNavigation />
-
-        <Container
-          maxWidth="xl"
-          sx={{
-            py: {
-              xs: 2,
-              md: 4,
-            },
-          }}
-        >
-          <Box
-            sx={{
-              mb: 4,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: {
-                xs: "flex-start",
-                md: "center",
-              },
-              flexDirection: {
-                xs: "column",
-                md: "row",
-              },
-              gap: 2,
-            }}
-          >
-            <Box>
-              <Typography
-                variant="h4"
-                sx={{ mb: 0.7 }}
-              >
-                Workforce Overview
-              </Typography>
-
-              <Typography
-                color="text.secondary"
-              >
-                Real-time workforce intelligence
-                at a glance.
-              </Typography>
-            </Box>
-
-            <Typography
-              variant="body2"
-              sx={{
-                px: 2,
-                py: 1,
-                borderRadius: 3,
-                background:
-                  "rgba(25,210,124,.08)",
-                color: "primary.main",
-              }}
-            >
-              ● System operational
-            </Typography>
-          </Box>
-
-          <FilterBar
-            department={department}
-            location={location}
-            status={status}
-            setDepartment={setDepartment}
-            setLocation={setLocation}
-            setStatus={setStatus}
-          />
-
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "repeat(2, 1fr)",
-                lg: "repeat(5, 1fr)",
-              },
-              gap: 2,
-              mb: 2,
-            }}
-          >
-            {kpis.map((kpi) => (
-              <KPICard
-                key={kpi.title}
-                data={kpi}
-              />
-            ))}
-          </Box>
-
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                lg: "2fr 1fr",
-              },
-              gap: 2,
-              mb: 2,
-            }}
-          >
-            <AttendanceChart />
-
-            <WorkforceDonut />
-          </Box>
-
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                lg: "1.3fr 1fr",
-              },
-              gap: 2,
-            }}
-          >
-            <DepartmentChart />
-
-            <ActivityPanel />
-          </Box>
-
-          <Box sx={{ mt: 2 }}>
-            <Typography
-              variant="body2"
-              color="text.secondary"
-            >
-              Showing {filteredEmployees.length}{" "}
-              matching employees
-            </Typography>
-          </Box>
-        </Container>
-      </Box>
-    </Box>
-  );
+import {useEffect,useMemo,useState} from "react";
+import {Alert,Box,Container,Typography} from "@mui/material";
+import Sidebar from "../components/layout/Sidebar";import TopNavigation from "../components/layout/TopNavigation";
+import KPICard from "../components/dashboard/KPICard";import AttendanceChart from "../components/dashboard/AttendanceChart";import DepartmentChart from "../components/dashboard/DepartmentChart";import WorkforceDonut from "../components/dashboard/WorkforceDonut";import ActivityPanel from "../components/dashboard/ActivityPanel";import FilterBar from "../components/dashboard/FilterBar";import EmployeeTable from "../components/dashboard/EmployeeTable";
+import {employees as sampleEmployees,attendanceData,departmentData} from "../data/dashboard";import type {Employee,KPI,AttendancePoint,DepartmentData} from "../types/dashboard";import {api} from "../services/api";
+export default function Dashboard(){
+ const [employees,setEmployees]=useState<Employee[]>(sampleEmployees);const [attendance,setAttendance]=useState<AttendancePoint[]>(attendanceData);const [departmentStats,setDepartmentStats]=useState<DepartmentData[]>(departmentData);const [department,setDepartment]=useState("All");const [location,setLocation]=useState("All");const [status,setStatus]=useState("All");const [period,setPeriod]=useState("7");const [apiError,setApiError]=useState("");
+ useEffect(()=>{let live=true;Promise.all([api.employees(),api.attendance(),api.departments()]).then(([employeeRows,attendanceRows,departmentRows])=>{if(live){setEmployees(employeeRows);setAttendance(attendanceRows);setDepartmentStats(departmentRows)}}).catch(()=>{if(live)setApiError("Backend unavailable — showing Task 1 sample data. Start the SQLite API to load SQLite records.")});return()=>{live=false}},[]);
+ const filtered=useMemo(()=>employees.filter(e=>(department==="All"||e.department===department)&&(location==="All"||e.location===location)&&(status==="All"||e.status===status)),[employees,department,location,status]);
+ const present=filtered.filter(e=>["Present","Remote","Late"].includes(e.status)).length;const absent=filtered.filter(e=>e.status==="Absent").length;const leave=filtered.filter(e=>e.status==="On Leave").length;
+ const cards:KPI[]=[{title:"Total Employees",value:String(filtered.length),change:"Live",trend:"up",description:"filtered workforce"},{title:"Present",value:String(present),change:"Today",trend:"up",description:"including remote and late"},{title:"Absent",value:String(absent),change:"Today",trend:"down",description:"not present today"},{title:"On Leave",value:String(leave),change:"Today",trend:"up",description:"approved leave"},{title:"Attendance Rate",value:`${filtered.length?(present/filtered.length*100).toFixed(1):"0.0"}%`,change:"Today",trend:"up",description:"present / total employees"}];
+ const depts=departmentStats.map(d=>({...d,employees:filtered.filter(e=>e.department===d.name).length})).filter(d=>d.employees>0);
+ const workforce=[{name:"Present",value:present},{name:"Absent",value:absent},{name:"On Leave",value:leave},{name:"Other",value:Math.max(0,filtered.length-present-absent-leave)}];
+ return <Box sx={{display:"flex",minHeight:"100vh",background:"#07130F"}}><Sidebar/><Box sx={{flex:1,minWidth:0}}><TopNavigation/><Container maxWidth="xl" sx={{py:{xs:2,md:4}}}>
+ <Box sx={{mb:3,display:"flex",justifyContent:"space-between",alignItems:{xs:"flex-start",md:"center"},flexDirection:{xs:"column",md:"row"},gap:2}}><Box><Typography variant="h4" sx={{mb:.7,fontWeight:750}}>Workforce Overview</Typography><Typography color="text.secondary">Workforce intelligence, attendance and employee analytics.</Typography></Box><Typography variant="body2" sx={{px:2,py:1,borderRadius:3,background:"rgba(25,210,124,.08)",color:"primary.main"}}>● Dashboard active</Typography></Box>
+ {apiError&&<Alert severity="info" sx={{mb:2}}>{apiError}</Alert>}<FilterBar department={department} location={location} status={status} setDepartment={setDepartment} setLocation={setLocation} setStatus={setStatus}/>
+ <Box sx={{display:"flex",gap:1,alignItems:"center",mb:2,flexWrap:"wrap"}}><Typography variant="caption" color="text.secondary">Analytics period</Typography>{["7","30","90"].map(v=><Box key={v} component="button" onClick={()=>setPeriod(v)} sx={{border:0,borderRadius:2,px:1.5,py:.7,cursor:"pointer",color:period===v?"#07130F":"text.secondary",background:period===v?"primary.main":"rgba(255,255,255,.06)"}}>{v==="7"?"7 days":v==="30"?"30 days":"90 days"}</Box>)}</Box>
+ <Box sx={{display:"grid",gridTemplateColumns:{xs:"1fr",sm:"repeat(2,1fr)",lg:"repeat(5,1fr)"},gap:2,mb:2}}>{cards.map(k=><KPICard key={k.title} data={k}/>)}</Box>
+ <Box sx={{display:"grid",gridTemplateColumns:{xs:"1fr",lg:"2fr 1fr"},gap:2,mb:2}}><AttendanceChart data={attendance.slice(-Math.min(Number(period),attendance.length))}/><WorkforceDonut data={workforce}/></Box>
+ <Box sx={{display:"grid",gridTemplateColumns:{xs:"1fr",lg:"1.3fr 1fr"},gap:2}}><DepartmentChart data={depts}/><ActivityPanel/></Box><EmployeeTable employees={filtered}/>
+ </Container></Box></Box>;
 }

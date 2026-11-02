@@ -1,0 +1,7 @@
+import db from "./db.js";
+export const employeeRepository={
+ list({department,location,status,search}={}){let sql="SELECT e.id,e.name,e.email,e.role,d.name department,e.location,e.status FROM employees e JOIN departments d ON d.id=e.department_id WHERE 1=1";const a=[];for(const [v,col] of [[department,"d.name"],[location,"e.location"],[status,"e.status"]])if(v){sql+=` AND ${col}=?`;a.push(v)}if(search){sql+=" AND (e.name LIKE ? OR e.email LIKE ? OR e.role LIKE ?)";a.push(`%${search}%`,`%${search}%`,`%${search}%`)}return db.prepare(sql+" ORDER BY e.name").all(...a).map(e=>({...e,avatar:e.name.split(/\\s+/).map(x=>x[0]).slice(0,2).join("").toUpperCase()}))},
+ summary(){const total=db.prepare("SELECT COUNT(*) n FROM employees").get().n;const c=Object.fromEntries(db.prepare("SELECT status,COUNT(*) n FROM employees GROUP BY status").all().map(x=>[x.status,x.n]));const present=(c.Present||0)+(c.Remote||0)+(c.Late||0);return {totalEmployees:total,present,absent:c.Absent||0,onLeave:c["On Leave"]||0,attendanceRate:total?Number((present/total*100).toFixed(1)):0}},
+ departments(){return db.prepare("SELECT d.name,COUNT(e.id) employees FROM departments d LEFT JOIN employees e ON e.department_id=d.id GROUP BY d.id ORDER BY employees DESC").all()},
+ attendance(){return db.prepare("SELECT attendance_date day,SUM(status IN ('Present','Remote')) present,SUM(status='Absent') absent,SUM(status='Late') late FROM attendance GROUP BY attendance_date ORDER BY attendance_date DESC LIMIT 30").all().reverse()}
+};

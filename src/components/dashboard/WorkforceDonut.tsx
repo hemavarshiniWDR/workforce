@@ -13,7 +13,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import { workforceData } from "../../data/dashboard";
+import type { WorkforceStatus } from "../../types/dashboard";
+interface Props { data: WorkforceStatus[]; }
 
 const COLORS = [
   "#19D27C",
@@ -22,7 +23,7 @@ const COLORS = [
   "#FF6B6B",
 ];
 
-export default function WorkforceDonut() {
+export default function WorkforceDonut({ data }: Props) {
   return (
     <Card sx={{ height: "100%" }}>
       <CardContent>
@@ -46,14 +47,14 @@ export default function WorkforceDonut() {
           <ResponsiveContainer>
             <PieChart>
               <Pie
-                data={workforceData}
+                data={data}
                 dataKey="value"
                 nameKey="name"
                 innerRadius={75}
                 outerRadius={105}
                 paddingAngle={4}
               >
-                {workforceData.map((_, index) => (
+                {data.map((_, index) => (
                   <Cell
                     key={index}
                     fill={COLORS[index]}
@@ -77,7 +78,7 @@ export default function WorkforceDonut() {
             }}
           >
             <Typography variant="h4">
-              1,248
+              {data.reduce((sum, item) => sum + item.value, 0).toLocaleString()}
             </Typography>
 
             <Typography
@@ -90,7 +91,7 @@ export default function WorkforceDonut() {
         </Box>
 
         <Box>
-          {workforceData.map((item, index) => (
+          {data.map((item, index) => (
             <Box
               key={item.name}
               sx={{

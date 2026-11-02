@@ -84,6 +84,7 @@ export default function FilterBar({
             Hyderabad
           </MenuItem>
           <MenuItem value="Kochi">Kochi</MenuItem>
+          <MenuItem value="Visakhapatnam">Visakhapatnam</MenuItem>
         </Select>
       </FormControl>
 
@@ -102,6 +103,7 @@ export default function FilterBar({
           <MenuItem value="Remote">Remote</MenuItem>
           <MenuItem value="Late">Late</MenuItem>
           <MenuItem value="Absent">Absent</MenuItem>
+          <MenuItem value="On Leave">On Leave</MenuItem>
         </Select>
       </FormControl>
     </Box>

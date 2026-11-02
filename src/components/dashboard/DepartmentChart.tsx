@@ -15,9 +15,10 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import { departmentData } from "../../data/dashboard";
+import type { DepartmentData } from "../../types/dashboard";
+interface Props { data: DepartmentData[]; }
 
-export default function DepartmentChart() {
+export default function DepartmentChart({ data }: Props) {
   return (
     <Card sx={{ height: "100%" }}>
       <CardContent>
@@ -34,7 +35,7 @@ export default function DepartmentChart() {
 
         <Box sx={{ height: 330, mt: 2 }}>
           <ResponsiveContainer>
-            <BarChart data={departmentData}>
+            <BarChart data={data}>
               <CartesianGrid
                 strokeDasharray="3 3"
                 stroke="rgba(255,255,255,.05)"
