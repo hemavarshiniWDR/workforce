@@ -1,4 +1,5 @@
-import type { Employee,AttendancePoint,DepartmentData } from "../types/dashboard";
-const API_BASE=import.meta.env.VITE_API_URL??"/api";
-async function request<T>(path:string):Promise<T>{const response=await fetch(`${API_BASE}${path}`);if(!response.ok)throw new Error(`API request failed (${response.status})`);return response.json() as Promise<T>}
-export const api={employees:()=>request<Employee[]>("/employees"),attendance:()=>request<AttendancePoint[]>("/attendance"),departments:()=>request<DepartmentData[]>("/departments")};
+import { getAccessToken } from '../auth/tokenStore';
+import type { Employee,AttendancePoint,DepartmentData } from '../types/dashboard';
+const API_BASE=import.meta.env.VITE_API_URL??'http://localhost:4000/api';
+async function request<T>(path:string):Promise<T>{let token=getAccessToken();let response=await fetch(`${API_BASE}${path}`,{credentials:'include',headers:token?{Authorization:`Bearer ${token}`}:{}});if(response.status===401){const refreshed=await fetch(`${API_BASE}/auth/refresh`,{method:'POST',credentials:'include'});if(refreshed.ok){const data=await refreshed.json();token=data.accessToken;const {setAccessToken}=await import('../auth/tokenStore');setAccessToken(token);response=await fetch(`${API_BASE}${path}`,{credentials:'include',headers:{Authorization:`Bearer ${token}`}});}}if(!response.ok)throw new Error(`API request failed (${response.status})`);return response.json() as Promise<T>}
+export const api={employees:()=>request<Employee[]>('/employees'),attendance:()=>request<AttendancePoint[]>('/attendance'),departments:()=>request<DepartmentData[]>('/departments'),recentActivity:()=>request<{name:string;action:string;day:string;status:string}[]>('/activity'),profile:()=>request<Employee>('/me/profile'),myAttendance:()=>request<{day:string;status:string;checkIn:string|null;checkOut:string|null}[]>('/me/attendance')};

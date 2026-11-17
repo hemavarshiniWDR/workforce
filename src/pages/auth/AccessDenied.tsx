@@ -1,0 +1,3 @@
+import { Alert, Box, Button, Container, Typography } from '@mui/material';
+import { useAuth } from '../../auth/AuthContext';
+export default function AccessDenied(){const {user,logout}=useAuth();return <Container maxWidth="sm"><Box sx={{mt:12}}><Alert severity="error" sx={{mb:2}}>403 – Access denied</Alert><Typography variant="h4" fontWeight={700}>You do not have permission</Typography><Typography color="text.secondary" sx={{my:2}}>Your {user?.role??'current'} role cannot access this section. Contact an administrator if you believe this is incorrect.</Typography><Button variant="contained" onClick={()=>void logout()}>Sign out</Button></Box></Container>}

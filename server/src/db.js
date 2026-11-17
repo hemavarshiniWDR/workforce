@@ -1,7 +1,7 @@
 import Database from "better-sqlite3";
 import fs from "node:fs"; import path from "node:path"; import {fileURLToPath} from "node:url";
 const here=path.dirname(fileURLToPath(import.meta.url)); const dir=path.resolve(here,"../data"); fs.mkdirSync(dir,{recursive:true});
-const db=new Database(path.join(dir,"workforce.sqlite")); db.pragma("journal_mode = WAL"); db.pragma("foreign_keys = ON");
+const db=new Database(process.env.DB_PATH || path.join(dir,"workforce.sqlite")); db.pragma("journal_mode = WAL"); db.pragma("foreign_keys = ON");
 db.exec(`CREATE TABLE IF NOT EXISTS departments(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE);
 CREATE TABLE IF NOT EXISTS employees(id INTEGER PRIMARY KEY,name TEXT NOT NULL,email TEXT NOT NULL UNIQUE,role TEXT NOT NULL,department_id INTEGER NOT NULL REFERENCES departments(id),location TEXT NOT NULL,status TEXT NOT NULL CHECK(status IN ('Present','Absent','On Leave','Remote','Late')),created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS attendance(id INTEGER PRIMARY KEY,employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,attendance_date TEXT NOT NULL,status TEXT NOT NULL,check_in TEXT,check_out TEXT,UNIQUE(employee_id,attendance_date));
@@ -21,3 +21,11 @@ if(db.prepare("SELECT COUNT(*) n FROM employees").get().n===0){
  }); tx();
 }
 export default db;
+// Versioned auth/RBAC migration; safe to run on every startup.
+const migrationPath=path.resolve(here,'../migrations/002_auth_rbac.sql');
+db.exec(fs.readFileSync(migrationPath,'utf8'));
+const scopeColumns = db.pragma('table_info(employees)').map(column => column.name);
+const scopeMigrationPath = path.resolve(here, '../migrations/003_org_scoping.sql');
+const scopeMigration = fs.readFileSync(scopeMigrationPath, 'utf8');
+if (!scopeColumns.includes('team_name')) db.exec(scopeMigration);
+else db.exec('CREATE INDEX IF NOT EXISTS idx_employees_team ON employees(department_id, team_name)');
